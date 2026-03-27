@@ -1,0 +1,321 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#10b981">
+    <title>Douglas Rodrigues - Nutrição Inteligente</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+
+    <style>
+        :root { 
+            --bg-color: #f3f4f6; --card-bg: #ffffff; --primary: #10b981; 
+            --text-main: #1f2937; --text-muted: #6b7280; --border: #e5e7eb; 
+            --danger: #ef4444; --warning: #f59e0b;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-color); margin: 0; padding: 0 0 80px 0; color: var(--text-main); -webkit-tap-highlight-color: transparent; }
+        .container { width: 100%; max-width: 600px; margin: auto; padding: 15px; box-sizing: border-box; }
+        .header { text-align: center; padding: 20px 0; }
+        .logo { max-width: 180px; margin-bottom: 10px; }
+        .tabs-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .tab-btn { background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; font-size: 10px; gap: 4px; flex: 1; cursor: pointer; outline: none; }
+        .tab-btn i { font-size: 20px; }
+        .tab-btn.active { color: var(--primary); }
+        .aba-conteudo { display: none; }
+        .aba-conteudo.active { display: block; }
+        .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+        .search-box { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .search-box input { border: none; outline: none; width: 100%; font-size: 16px; }
+        .mobile-list-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 16px; border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border); }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge.baixo { background: #dcfce7; color: #166534; }
+        .badge.moderado { background: #fef3c7; color: #92400e; }
+        .badge.alto { background: #fee2e2; color: #991b1b; }
+        select, input, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; font-family: 'Inter'; }
+        .admin-btn { background: var(--text-main); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: 700; cursor: pointer; }
+        .receita-card h3 { margin: 0 0 8px 0; font-size: 1.1em; color: var(--primary); }
+        .receita-card ul { padding: 0; margin: 0 0 12px 0; list-style: none; }
+        .contact-pill { display: inline-flex; align-items: center; background: #fff; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); gap: 12px; margin-top: 10px; }
+        .admin-sub-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .admin-sub-tabs button { flex: 1; padding: 10px; border: none; background: #f3f4f6; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .admin-sub-tabs button.active { background: var(--primary); color: white; }
+    </style>
+</head>
+<body onload="iniciarSistema()">
+
+
+<div class="container">
+    <div class="header">
+        <img src="logo.png" alt="Douglas Nutri" class="logo" onerror="this.src='https://via.placeholder.com/180x60?text=Douglas+Nutri'">
+        <div class="contact-pill">
+            <a href="https://wa.me/5542984095224" target="_blank" style="color:#25D366"><i class="fab fa-whatsapp fa-lg"></i></a>
+            <a href="https://instagram.com/douglas_nutri" target="_blank" style="color:#E1306C"><i class="fab fa-instagram fa-lg"></i></a>
+        </div>
+    </div>
+
+
+    <div id="aba-receitas" class="aba-conteudo active">
+        <div style="display:flex; gap:8px; margin-bottom:15px;">
+            <button id="f-todas" onclick="setTipoFiltro('todos')" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:white;">Todas</button>
+            <button id="f-doce" onclick="setTipoFiltro('doce')" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:white;">🍭 Doces</button>
+            <button id="f-salgada" onclick="setTipoFiltro('salgada')" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:white;">🥗 Salgadas</button>
+        </div>
+        <div class="search-box">
+            <i class="fas fa-search" style="color:var(--text-muted)"></i>
+            <input type="text" id="ingredientesUser" placeholder="Ex: frango, ovo..." onkeyup="novaBuscaReceitas()">
+        </div>
+        <div id="listaResultadosReceitas"></div>
+        <button id="btn-mais" onclick="carregarMaisReceitas()" style="display:none; width:100%; padding:15px; background:none; border:none; color:var(--primary); font-weight:700;">Carregar mais...</button>
+    </div>
+
+
+    <div id="aba-fodmaps" class="aba-conteudo">
+        <div class="search-box"><i class="fas fa-search"></i><input type="text" id="buscaFodmap" placeholder="Buscar alimento..." onkeyup="filtrarFodmaps()"></div>
+        <div id="listaFodmaps"></div>
+    </div>
+
+
+    <div id="aba-substituicoes" class="aba-conteudo">
+        <div class="card">
+            <h4 style="margin-top:0">Calculadora</h4>
+            <select id="sub-categoria" onchange="atualizarAlimentosSub()"></select>
+            <select id="sub-alimento" onchange="calcularEquivalentes()"></select>
+            <input type="number" id="sub-qtd" value="100" onkeyup="calcularEquivalentes()">
+        </div>
+        <div id="listaEquivalentes"></div>
+    </div>
+
+
+    <div id="aba-admin" class="aba-conteudo">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <strong>⚙️ Painel Douglas Nutri</strong>
+                <button onclick="fazerLogout()" style="color:red; background:none; border:none; font-weight:bold;">Sair</button>
+            </div>
+            
+            <div class="admin-sub-tabs">
+                <button id="btn-adm-subs" class="active" onclick="setSubAbaAdmin('subs')">Alimentos</button>
+                <button id="btn-adm-recs" onclick="setSubAbaAdmin('recs')">Receitas</button>
+                <button id="btn-adm-import" onclick="setSubAbaAdmin('import')">Importar</button>
+            </div>
+
+
+            <div id="adm-secao-subs">
+                <h4>Novo Alimento</h4>
+                <input type="text" id="adm-sub-nome" placeholder="Nome">
+                <select id="adm-sub-cat"><option value="Frutas">Frutas</option><option value="Carboidratos">Carboidratos</option><option value="Proteínas">Proteínas</option><option value="Gordura Vegetal">Gordura Vegetal</option></select>
+                <input type="number" id="adm-sub-kcal" placeholder="Kcal/100g">
+                <button class="admin-btn" onclick="salvarNovaSubstituicaoFirebase()">Salvar Alimento</button>
+                <hr style="margin:20px 0; opacity:0.1"><div id="tabela-gestao-subs"></div>
+            </div>
+
+
+            <div id="adm-secao-recs" style="display:none;">
+                <h4>Gestão de Receitas</h4>
+                <input type="text" id="rec-nome" placeholder="Nome">
+                <select id="rec-tipo"><option value="salgada">Salgada</option><option value="doce">Doce</option></select>
+                <input type="text" id="rec-tags" placeholder="Tags (separadas por vírgula)">
+                <textarea id="rec-quant" placeholder="Ingredientes (linha por linha)" style="height:80px;"></textarea>
+                <textarea id="rec-prep" placeholder="Preparo" style="height:80px;"></textarea>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+                    <input type="number" id="rec-kcal" placeholder="Kcal"><input type="text" id="rec-p" placeholder="Prot">
+                    <input type="text" id="rec-c" placeholder="Carb"><input type="text" id="rec-g" placeholder="Gord">
+                </div>
+                <button id="btn-salvar-rec" class="admin-btn" onclick="salvarReceitaFirebase()" style="background:var(--primary)">Salvar</button>
+                <hr style="margin:20px 0; opacity:0.1"><div id="lista-gestao-receitas"></div>
+            </div>
+
+
+            <div id="adm-secao-import" style="display:none;">
+                <h4>Importação JSON</h4>
+                <textarea id="json-import" style="height:200px;" placeholder="Cole o JSON aqui..."></textarea>
+                <select id="tipo-import"><option value="fodmaps">FODMAPs</option><option value="receitas">Receitas</option><option value="substituicoes">Substituições</option></select>
+                <button class="admin-btn" onclick="importarJSON()">Importar Dados</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="tabs-nav">
+    <button class="tab-btn active" id="btn-receitas" onclick="mudarAba('receitas')"><i class="fas fa-utensils"></i><span>Receitas</span></button>
+    <button class="tab-btn" id="btn-fodmaps" onclick="mudarAba('fodmaps')"><i class="fas fa-leaf"></i><span>FODMAPs</span></button>
+    <button class="tab-btn" id="btn-substituicoes" onclick="mudarAba('substituicoes')"><i class="fas fa-exchange-alt"></i><span>Substituir</span></button>
+    <button class="tab-btn" id="btn-admin" onclick="acessarAdmin()"><i class="fas fa-user-lock"></i><span>Admin</span></button>
+</div>
+
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBGxukI60ckdXfKKXOIL6hak2PLbOcof5c", authDomain: "douglas-nutri.firebaseapp.com", projectId: "douglas-nutri", storageBucket: "douglas-nutri.firebasestorage.app", messagingSenderId: "1060242041482", appId: "1:1060242041482:web:17c1df9c7c6d56f5f05b73" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+
+    let baseReceitas = [], baseFodmaps = [], baseSubstituicoesNuvem = [];
+    let filtroTipoAtual = 'todos', limiteExibicao = 5, receitasFiltradasAtuais = [], idReceitaEmEdicao = null;
+
+
+    async function iniciarSistema() {
+        await Promise.all([carregarReceitasFirebase(), carregarFodmapsFirebase(), carregarSubsFirebase()]);
+        if(localStorage.getItem("adminLogado") === "true") mudarAba('admin');
+    }
+
+
+    async function carregarReceitasFirebase() { const snap = await db.collection("receitas").get(); baseReceitas = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); novaBuscaReceitas(); }
+    async function carregarFodmapsFirebase() { const snap = await db.collection("fodmaps").orderBy("alimento").get(); baseFodmaps = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); filtrarFodmaps(); }
+    async function carregarSubsFirebase() { const snap = await db.collection("substituicoes").get(); baseSubstituicoesNuvem = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); if(baseSubstituicoesNuvem.length > 0) inicializarSubstituicoes(); }
+
+
+    function mudarAba(id) {
+        if(id === 'admin' && localStorage.getItem("adminLogado") !== "true") { alert("Acesso negado."); return; }
+        document.querySelectorAll('.aba-conteudo').forEach(e => { e.classList.remove('active'); e.style.display = 'none'; });
+        document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+        const aba = document.getElementById('aba-'+id);
+        if(aba) { aba.classList.add('active'); aba.style.display = 'block'; }
+        document.getElementById('btn-'+id)?.classList.add('active');
+        if(id === 'admin') setSubAbaAdmin('subs');
+    }
+
+
+    function acessarAdmin() {
+        if(localStorage.getItem("adminLogado") === "true") { mudarAba('admin'); return; }
+        const s = prompt("Área Restrita. Digite a senha:");
+        if(s === "Juliomecanico29") { localStorage.setItem("adminLogado", "true"); mudarAba('admin'); }
+        else if(s) alert("Incorreta.");
+    }
+    function fazerLogout() { localStorage.removeItem("adminLogado"); location.reload(); }
+
+
+    function setSubAbaAdmin(aba) {
+        document.getElementById('adm-secao-subs').style.display = aba === 'subs' ? 'block' : 'none';
+        document.getElementById('adm-secao-recs').style.display = aba === 'recs' ? 'block' : 'none';
+        document.getElementById('adm-secao-import').style.display = aba === 'import' ? 'block' : 'none';
+        document.getElementById('btn-adm-subs').classList.toggle('active', aba === 'subs');
+        document.getElementById('btn-adm-recs').classList.toggle('active', aba === 'recs');
+        document.getElementById('btn-adm-import').classList.toggle('active', aba === 'import');
+        if(aba === 'subs') atualizarTabelaGestaoAdmin();
+        if(aba === 'recs') atualizarListaGestaoReceitas();
+    }
+
+
+    function filtrarFodmaps() {
+        const txt = document.getElementById('buscaFodmap').value.toLowerCase();
+        const div = document.getElementById('listaFodmaps'); div.innerHTML = "";
+        baseFodmaps.filter(f => f.alimento.toLowerCase().includes(txt)).forEach(f => {
+            div.innerHTML += `<div class="mobile-list-item"><div><b>${f.alimento}</b><br><small>${f.categoria}</small></div><span class="badge ${f.color}">${f.nivel}</span></div>`;
+        });
+    }
+
+
+    function novaBuscaReceitas() {
+        const input = document.getElementById('ingredientesUser').value.toLowerCase();
+        const termos = input.split(/[, ]+/).filter(t => t.length > 1);
+        limiteExibicao = 5;
+        let res = baseReceitas.filter(r => filtroTipoAtual === 'todos' || r.tipo === filtroTipoAtual);
+        if(termos.length > 0) {
+            res = res.map(r => {
+                const matches = termos.filter(t => (r.tags||[]).some(tag => tag.toLowerCase().includes(t))).length;
+                return {...r, matches, total: (r.tags||[]).length};
+            }).filter(r => r.matches > 0).sort((a,b) => b.matches - a.matches);
+        } else { res = res.sort((a,b) => a.nome.localeCompare(b.nome)); }
+        receitasFiltradasAtuais = res; renderizarPaginado(termos);
+    }
+
+
+function renderizarPaginado(termos) {
+        const div = document.getElementById('listaResultadosReceitas');
+        const lista = receitasFiltradasAtuais.slice(0, limiteExibicao);
+        div.innerHTML = (lista.length === 0) ? "<p style='text-align:center; padding:40px; color:gray;'>Nenhuma receita.</p>" : "";
+        
+        lista.forEach(r => {
+            const ingHtml = (r.quantidades||[]).map(ing => {
+                const tem = termos.some(t => ing.toLowerCase().includes(t));
+                return `<li style="font-size:13px; color:${tem?'var(--primary)':'#666'}; ${tem?'font-weight:700':''}">• ${ing}</li>`;
+            }).join('');
+
+
+            div.innerHTML += `
+                <div class="card receita-card">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <h3 style="margin:0;">${r.nome}</h3>
+                        ${r.matches ? `<span class="badge baixo">${Math.round((r.matches/r.total)*100)}% Match</span>` : ''}
+                    </div>
+                    
+                    <ul style="padding:0; margin:12px 0;">${ingHtml}</ul>
+                    
+                    <div style="font-size:12px; background:#f9fafb; padding:12px; border-radius:10px; line-height:1.4; color:var(--text-main); margin-bottom:12px;">
+                        <strong>Preparo:</strong> ${r.preparo}
+                    </div>
+
+
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; border-top: 1px solid #eee; pt: 12px; margin-top: 10px; padding-top: 10px;">
+                        <div style="font-size:11px;">🔥 <b>${r.kcal}</b> kcal</div>
+                        <div style="font-size:11px;">💪 <b>${r.p || '0g'}</b> Prot</div>
+                        <div style="font-size:11px;">🍞 <b>${r.c || '0g'}</b> Carb</div>
+                        <div style="font-size:11px;">🥑 <b>${r.g || '0g'}</b> Gord</div>
+                    </div>
+                </div>`;
+        });
+        document.getElementById('btn-mais').style.display = receitasFiltradasAtuais.length > limiteExibicao ? 'block' : 'none';
+    }
+
+
+
+
+    function carregarMaisReceitas() { limiteExibicao += 5; renderizarPaginado([]); }
+    function setTipoFiltro(t) { filtroTipoAtual = t; novaBuscaReceitas(); }
+
+
+    function atualizarTabelaGestaoAdmin() {
+        const div = document.getElementById('tabela-gestao-subs'); div.innerHTML = "";
+        baseSubstituicoesNuvem.sort((a,b) => a.alimento.localeCompare(b.alimento)).forEach(i => {
+            div.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;"><span>${i.alimento}</span><button onclick="excluirSub('${i.id}')" style="color:red; background:none; border:none;">X</button></div>`;
+        });
+    }
+
+
+    async function excluirSub(id) { if(confirm("Apagar?")) { await db.collection("substituicoes").doc(id).delete(); location.reload(); } }
+
+
+    function atualizarListaGestaoReceitas() {
+        const div = document.getElementById('lista-gestao-receitas'); div.innerHTML = "";
+        baseReceitas.sort((a,b) => a.nome.localeCompare(b.nome)).forEach(r => {
+            div.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;"><span>${r.nome}</span><button onclick="excluirRec('${r.id}')" style="color:red; background:none; border:none;">X</button></div>`;
+        });
+    }
+
+
+    async function excluirRec(id) { if(confirm("Apagar?")) { await db.collection("receitas").doc(id).delete(); location.reload(); } }
+
+
+    async function salvarNovaSubstituicaoFirebase() {
+        const n = document.getElementById('adm-sub-nome').value, k = parseFloat(document.getElementById('adm-sub-kcal').value), c = document.getElementById('adm-sub-cat').value;
+        if(!n || isNaN(k)) return alert("Preencha tudo.");
+        await db.collection("substituicoes").add({alimento: n, categoria: c, kcal: k}); location.reload();
+    }
+
+
+    async function salvarReceitaFirebase() {
+        const r = { nome: document.getElementById('rec-nome').value, tipo: document.getElementById('rec-tipo').value, tags: document.getElementById('rec-tags').value.split(',').map(t => t.trim().toLowerCase()), quantidades: document.getElementById('rec-quant').value.split('\n').filter(l => l.length > 0), preparo: document.getElementById('rec-prep').value, kcal: document.getElementById('rec-kcal').value, p: document.getElementById('rec-p').value, c: document.getElementById('rec-c').value, g: document.getElementById('rec-g').value };
+        await db.collection("receitas").add(r); location.reload();
+    }
+
+
+    async function importarJSON() {
+        try { const data = JSON.parse(document.getElementById('json-import').value); const colecao = document.getElementById('tipo-import').value; for(let item of data) { await db.collection(colecao).add(item); } alert("Sucesso!"); location.reload(); } catch(e) { alert("Erro: " + e.message); }
+    }
+
+
+    function inicializarSubstituicoes() { const cats = [...new Set(baseSubstituicoesNuvem.map(i => i.categoria))]; document.getElementById('sub-categoria').innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join(''); atualizarAlimentosSub(); }
+    function atualizarAlimentosSub() { const c = document.getElementById('sub-categoria').value; const lista = baseSubstituicoesNuvem.filter(i => i.categoria === c).sort((a,b) => a.alimento.localeCompare(b.alimento)); document.getElementById('sub-alimento').innerHTML = lista.map(i => `<option value="${i.id}">${i.alimento}</option>`).join(''); calcularEquivalentes(); }
+    function calcularEquivalentes() { const q = parseFloat(document.getElementById('sub-qtd').value) || 0, id = document.getElementById('sub-alimento').value, orig = baseSubstituicoesNuvem.find(i => i.id === id); const container = document.getElementById('listaEquivalentes'); if(!orig || q <= 0) return; const kcalT = (q/100) * orig.kcal; container.innerHTML = ""; baseSubstituicoesNuvem.filter(i => i.categoria === orig.categoria).forEach(d => { container.innerHTML += `<div class="mobile-list-item"><span>${d.alimento}</span><strong style="color:var(--primary)">${Math.round((kcalT/d.kcal)*100)}g</strong></div>`; }); }
+</script>
+</body>
+</html>
