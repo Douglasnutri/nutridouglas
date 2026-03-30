@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
@@ -12,7 +12,6 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
 
     <style>
         :root { 
@@ -34,11 +33,19 @@
         .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
         .search-box { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .search-box input { border: none; outline: none; width: 100%; font-size: 16px; }
-        .mobile-list-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 16px; border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border); }
+        .mobile-list-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 16px; border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border); cursor: pointer; }
         .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .badge.baixo { background: #dcfce7; color: #166534; }
+        .badge.moderado { background: #fef3c7; color: #92400e; }
+        .badge.alto { background: #fee2e2; color: #991b1b; }
         select, input, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; font-family: 'Inter'; }
         .admin-btn { background: var(--text-main); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: 700; cursor: pointer; }
+        
+        /* Sidebar e Overlay */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1100; }
+        .sidebar { position: fixed; bottom: -100%; left: 0; width: 100%; background: white; z-index: 1200; transition: 0.4s; border-radius: 24px 24px 0 0; padding: 25px; box-sizing: border-box; }
+        .sidebar.open { bottom: 0; }
+        
         .receita-card h3 { margin: 0 0 8px 0; font-size: 1.1em; color: var(--primary); }
         .receita-card ul { padding: 0; margin: 0 0 12px 0; list-style: none; }
         .contact-pill { display: inline-flex; align-items: center; background: #fff; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); gap: 12px; margin-top: 10px; }
@@ -49,7 +56,6 @@
 </head>
 <body onload="iniciarSistema()">
 
-
 <div class="container">
     <div class="header">
         <img src="logo.png" alt="Douglas Nutri" class="logo" onerror="this.src='https://via.placeholder.com/180x60?text=Douglas+Nutri'">
@@ -58,7 +64,6 @@
             <a href="https://instagram.com/douglas_nutri" target="_blank" style="color:#E1306C"><i class="fab fa-instagram fa-lg"></i></a>
         </div>
     </div>
-
 
     <div id="aba-receitas" class="aba-conteudo active">
         <div style="display:flex; gap:8px; margin-bottom:15px;">
@@ -71,12 +76,10 @@
         <button id="btn-mais" onclick="carregarMaisReceitas()" style="display:none; width:100%; padding:15px; background:none; border:none; color:var(--primary); font-weight:700;">Carregar mais...</button>
     </div>
 
-
     <div id="aba-fodmaps" class="aba-conteudo">
         <div class="search-box"><i class="fas fa-search"></i><input type="text" id="buscaFodmap" placeholder="Buscar alimento..." onkeyup="filtrarFodmaps()"></div>
         <div id="listaFodmaps"></div>
     </div>
-
 
     <div id="aba-substituicoes" class="aba-conteudo">
         <div class="card">
@@ -87,7 +90,6 @@
         </div>
         <div id="listaEquivalentes"></div>
     </div>
-
 
     <div id="aba-admin" class="aba-conteudo">
         <div class="card">
@@ -100,28 +102,8 @@
                 <button id="btn-adm-recs" onclick="setSubAbaAdmin('recs')">Receitas</button>
                 <button id="btn-adm-import" onclick="setSubAbaAdmin('import')">Importar</button>
             </div>
-            <div id="adm-secao-subs">
-                <h4>Novo Alimento</h4>
-                <input type="text" id="adm-sub-nome" placeholder="Nome">
-                <select id="adm-sub-cat"><option value="Frutas">Frutas</option><option value="Carboidratos">Carboidratos</option><option value="Proteínas">Proteínas</option><option value="Gordura Vegetal">Gordura Vegetal</option></select>
-                <input type="number" id="adm-sub-kcal" placeholder="Kcal/100g">
-                <button class="admin-btn" onclick="salvarNovaSubstituicaoFirebase()">Salvar Alimento</button>
-                <hr style="margin:20px 0; opacity:0.1"><div id="tabela-gestao-subs"></div>
-            </div>
-            <div id="adm-secao-recs" style="display:none;">
-                <h4>Gestão de Receitas</h4>
-                <input type="text" id="rec-nome" placeholder="Nome">
-                <select id="rec-tipo"><option value="salgada">Salgada</option><option value="doce">Doce</option></select>
-                <input type="text" id="rec-tags" placeholder="Tags (separadas por vírgula)">
-                <textarea id="rec-quant" placeholder="Ingredientes (linha por linha)"></textarea>
-                <textarea id="rec-prep" placeholder="Preparo"></textarea>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
-                    <input type="number" id="rec-kcal" placeholder="Kcal"><input type="text" id="rec-p" placeholder="Prot">
-                    <input type="text" id="rec-c" placeholder="Carb"><input type="text" id="rec-g" placeholder="Gord">
-                </div>
-                <button class="admin-btn" onclick="salvarReceitaFirebase()" style="background:var(--primary)">Salvar</button>
-                <hr style="margin:20px 0; opacity:0.1"><div id="lista-gestao-receitas"></div>
-            </div>
+            <div id="adm-secao-subs"><div id="tabela-gestao-subs"></div></div>
+            <div id="adm-secao-recs" style="display:none;"><div id="lista-gestao-receitas"></div></div>
             <div id="adm-secao-import" style="display:none;">
                 <h4>Importação JSON</h4>
                 <textarea id="json-import" style="height:200px;" placeholder="Cole o JSON aqui..."></textarea>
@@ -132,7 +114,6 @@
     </div>
 </div>
 
-
 <div class="tabs-nav">
     <button class="tab-btn active" id="btn-receitas" onclick="mudarAba('receitas')"><i class="fas fa-utensils"></i><span>Receitas</span></button>
     <button class="tab-btn" id="btn-fodmaps" onclick="mudarAba('fodmaps')"><i class="fas fa-leaf"></i><span>FODMAPs</span></button>
@@ -140,28 +121,34 @@
     <button class="tab-btn" id="btn-admin" onclick="acessarAdmin()"><i class="fas fa-user-lock"></i><span>Admin</span></button>
 </div>
 
+<div class="overlay" id="overlay" onclick="fecharSidebar()"></div>
+<div class="sidebar" id="sidebar">
+    <div style="width: 40px; height: 4px; background: #eee; border-radius: 10px; margin: -10px auto 20px;"></div>
+    <h2 id="side-titulo" style="margin: 0 0 5px 0;"></h2>
+    <p id="side-cat" style="color: var(--text-muted); font-size: 14px; margin: 0 0 20px 0;"></p>
+    <div style="background: #f9fafb; padding: 20px; border-radius: 15px;">
+        <strong>Observações:</strong>
+        <p id="side-obs" style="font-size: 14px; line-height: 1.5; margin-top: 10px;"></p>
+    </div>
+    <button class="admin-btn" onclick="fecharSidebar()" style="margin-top: 25px; background: var(--primary);">Entendi</button>
+</div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBGxukI60ckdXfKKXOIL6hak2PLbOcof5c", authDomain: "douglas-nutri.firebaseapp.com", projectId: "douglas-nutri", storageBucket: "douglas-nutri.firebasestorage.app", messagingSenderId: "1060242041482", appId: "1:1060242041482:web:17c1df9c7c6d56f5f05b73" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-
     let baseReceitas = [], baseFodmaps = [], baseSubstituicoesNuvem = [];
-    let filtroTipoAtual = 'todos', limiteExibicao = 5, receitasFiltradasAtuais = [], idReceitaEmEdicao = null;
-    let emProcessamentoAdmin = false;
-
+    let filtroTipoAtual = 'todos', limiteExibicao = 5, receitasFiltradasAtuais = [], emProcessamentoAdmin = false;
 
     async function iniciarSistema() {
         await Promise.all([carregarReceitasFirebase(), carregarFodmapsFirebase(), carregarSubsFirebase()]);
         if(localStorage.getItem("adminLogado") === "true") mudarAba('admin');
     }
 
-
     async function carregarReceitasFirebase() { const snap = await db.collection("receitas").get(); baseReceitas = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); novaBuscaReceitas(); }
     async function carregarFodmapsFirebase() { const snap = await db.collection("fodmaps").orderBy("alimento").get(); baseFodmaps = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); filtrarFodmaps(); }
     async function carregarSubsFirebase() { const snap = await db.collection("substituicoes").get(); baseSubstituicoesNuvem = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); if(baseSubstituicoesNuvem.length > 0) inicializarSubstituicoes(); }
-
 
     function mudarAba(id) {
         if(id === 'admin' && localStorage.getItem("adminLogado") !== "true") return;
@@ -173,7 +160,6 @@
         if(id === 'admin') setSubAbaAdmin('subs');
     }
 
-
     function acessarAdmin() {
         if (emProcessamentoAdmin) return;
         if (localStorage.getItem("adminLogado") === "true") { mudarAba('admin'); return; }
@@ -183,11 +169,33 @@
         else if (s) alert("Incorreta.");
         setTimeout(() => { emProcessamentoAdmin = false; }, 2000);
     }
-
-
     function fazerLogout() { localStorage.removeItem("adminLogado"); location.reload(); }
 
+    // --- FODMAPS ---
+    function filtrarFodmaps() {
+        const txt = document.getElementById('buscaFodmap').value.toLowerCase();
+        const div = document.getElementById('listaFodmaps'); div.innerHTML = "";
+        baseFodmaps.filter(f => f.alimento.toLowerCase().includes(txt)).forEach(f => {
+            div.innerHTML += `
+                <div class="mobile-list-item" onclick="abrirDetalhes('${f.id}')">
+                    <div><b>${f.alimento}</b><br><small>${f.categoria}</small></div>
+                    <span class="badge ${f.color}">${f.nivel}</span>
+                </div>`;
+        });
+    }
 
+    function abrirDetalhes(id) {
+        const f = baseFodmaps.find(x => x.id === id);
+        if(!f) return;
+        document.getElementById('side-titulo').innerText = f.alimento;
+        document.getElementById('side-cat').innerText = f.categoria;
+        document.getElementById('side-obs').innerText = f.obs || "Seguro nas porções indicadas pelo nutricionista.";
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('sidebar').classList.add('open');
+    }
+    function fecharSidebar() { document.getElementById('overlay').style.display='none'; document.getElementById('sidebar').classList.remove('open'); }
+
+    // --- RECEITAS ---
     function renderizarPaginado(termos) {
         const div = document.getElementById('listaResultadosReceitas');
         const lista = receitasFiltradasAtuais.slice(0, limiteExibicao);
@@ -213,7 +221,6 @@
         document.getElementById('btn-mais').style.display = receitasFiltradasAtuais.length > limiteExibicao ? 'block' : 'none';
     }
 
-
     function novaBuscaReceitas() {
         const input = document.getElementById('ingredientesUser').value.toLowerCase();
         const termos = input.split(/[, ]+/).filter(t => t.length > 1);
@@ -227,53 +234,36 @@
         } else { res = res.sort((a,b) => a.nome.localeCompare(b.nome)); }
         receitasFiltradasAtuais = res; renderizarPaginado(termos);
     }
-
-
     function setTipoFiltro(t) { filtroTipoAtual = t; novaBuscaReceitas(); }
     function carregarMaisReceitas() { limiteExibicao += 5; renderizarPaginado([]); }
-    function filtrarFodmaps() {
-        const txt = document.getElementById('buscaFodmap').value.toLowerCase();
-        const div = document.getElementById('listaFodmaps'); div.innerHTML = "";
-        baseFodmaps.filter(f => f.alimento.toLowerCase().includes(txt)).forEach(f => {
-            div.innerHTML += `<div class="mobile-list-item"><div><b>${f.alimento}</b><br><small>${f.categoria}</small></div><span class="badge ${f.color}">${f.nivel}</span></div>`;
-        });
-    }
+
+    // --- ADMIN ---
     function setSubAbaAdmin(aba) {
         document.getElementById('adm-secao-subs').style.display = aba === 'subs' ? 'block' : 'none';
         document.getElementById('adm-secao-recs').style.display = aba === 'recs' ? 'block' : 'none';
         document.getElementById('adm-secao-import').style.display = aba === 'import' ? 'block' : 'none';
-        document.getElementById('btn-adm-subs').classList.toggle('active', aba === 'subs');
-        document.getElementById('btn-adm-recs').classList.toggle('active', aba === 'recs');
-        document.getElementById('btn-adm-import').classList.toggle('active', aba === 'import');
         if(aba === 'subs') atualizarTabelaGestaoAdmin();
         if(aba === 'recs') atualizarListaGestaoReceitas();
     }
     function atualizarTabelaGestaoAdmin() {
-        const div = document.getElementById('tabela-gestao-subs'); div.innerHTML = "";
+        const div = document.getElementById('tabela-gestao-subs'); div.innerHTML = "<h4>Gestão de Alimentos</h4>";
         baseSubstituicoesNuvem.sort((a,b) => a.alimento.localeCompare(b.alimento)).forEach(i => {
             div.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;"><span>${i.alimento}</span><button onclick="excluirSub('${i.id}')" style="color:red; background:none; border:none;">X</button></div>`;
         });
     }
     async function excluirSub(id) { if(confirm("Apagar?")) { await db.collection("substituicoes").doc(id).delete(); location.reload(); } }
     function atualizarListaGestaoReceitas() {
-        const div = document.getElementById('lista-gestao-receitas'); div.innerHTML = "";
+        const div = document.getElementById('lista-gestao-receitas'); div.innerHTML = "<h4>Gestão de Receitas</h4>";
         baseReceitas.sort((a,b) => a.nome.localeCompare(b.nome)).forEach(r => {
             div.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;"><span>${r.nome}</span><button onclick="excluirRec('${r.id}')" style="color:red; background:none; border:none;">X</button></div>`;
         });
     }
     async function excluirRec(id) { if(confirm("Apagar?")) { await db.collection("receitas").doc(id).delete(); location.reload(); } }
-    async function salvarNovaSubstituicaoFirebase() {
-        const n = document.getElementById('adm-sub-nome').value, k = parseFloat(document.getElementById('adm-sub-kcal').value), c = document.getElementById('adm-sub-cat').value;
-        if(!n || isNaN(k)) return alert("Preencha tudo.");
-        await db.collection("substituicoes").add({alimento: n, categoria: c, kcal: k}); location.reload();
-    }
-    async function salvarReceitaFirebase() {
-        const r = { nome: document.getElementById('rec-nome').value, tipo: document.getElementById('rec-tipo').value, tags: document.getElementById('rec-tags').value.split(',').map(t => t.trim().toLowerCase()), quantidades: document.getElementById('rec-quant').value.split('\n').filter(l => l.length > 0), preparo: document.getElementById('rec-prep').value, kcal: document.getElementById('rec-kcal').value, p: document.getElementById('rec-p').value, c: document.getElementById('rec-c').value, g: document.getElementById('rec-g').value };
-        await db.collection("receitas").add(r); location.reload();
-    }
     async function importarJSON() {
         try { const data = JSON.parse(document.getElementById('json-import').value); const colecao = document.getElementById('tipo-import').value; for(let item of data) { await db.collection(colecao).add(item); } alert("Sucesso!"); location.reload(); } catch(e) { alert("Erro: " + e.message); }
     }
+
+    // --- SUBSTITUIÇÕES ---
     function inicializarSubstituicoes() { const cats = [...new Set(baseSubstituicoesNuvem.map(i => i.categoria))]; document.getElementById('sub-categoria').innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join(''); atualizarAlimentosSub(); }
     function atualizarAlimentosSub() { const c = document.getElementById('sub-categoria').value; const lista = baseSubstituicoesNuvem.filter(i => i.categoria === c).sort((a,b) => a.alimento.localeCompare(b.alimento)); document.getElementById('sub-alimento').innerHTML = lista.map(i => `<option value="${i.id}">${i.alimento}</option>`).join(''); calcularEquivalentes(); }
     function calcularEquivalentes() { const q = parseFloat(document.getElementById('sub-qtd').value) || 0, id = document.getElementById('sub-alimento').value, orig = baseSubstituicoesNuvem.find(i => i.id === id); const container = document.getElementById('listaEquivalentes'); if(!orig || q <= 0) return; const kcalT = (q/100) * orig.kcal; container.innerHTML = ""; baseSubstituicoesNuvem.filter(i => i.categoria === orig.categoria).forEach(d => { container.innerHTML += `<div class="mobile-list-item"><span>${d.alimento}</span><strong style="color:var(--primary)">${Math.round((kcalT/d.kcal)*100)}g</strong></div>`; }); }
